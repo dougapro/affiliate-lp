@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>トレンド商品紹介 | 楽天市場</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans JP', sans-serif; background: #f5f5f5; min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+  .header { width: 100%; background: #BF0000; padding: 12px 20px; display: flex; align-items: center; justify-content: center; }
+  .header-logo { color: #fff; font-size: 18px; font-weight: 700; letter-spacing: 0.05em; }
+  .header-sub { color: rgba(255,255,255,0.8); font-size: 11px; text-align: center; margin-top: 2px; }
+  .card { background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.10); max-width: 480px; width: calc(100% - 32px); margin: 24px auto; }
+  .trend-badge { background: #fff3cd; border-bottom: 1px solid #ffe69c; padding: 10px 20px; font-size: 12px; color: #856404; }
+  .trend-badge .tag { font-weight: 700; color: #BF0000; }
+  .product-image-wrap { width: 100%; aspect-ratio: 1; background: #f9f9f9; display: flex; align-items: center; justify-content: center; overflow: hidden; max-height: 320px; }
+  .product-image-wrap img { width: 100%; height: 100%; object-fit: contain; }
+  .no-image { font-size: 64px; opacity: 0.3; }
+  .product-info { padding: 20px; }
+  .product-name { font-size: 16px; font-weight: 700; color: #1a1a1a; line-height: 1.5; margin-bottom: 12px; }
+  .price-row { display: flex; align-items: baseline; gap: 4px; margin-bottom: 20px; }
+  .price-label { font-size: 12px; color: #888; }
+  .price-value { font-size: 28px; font-weight: 700; color: #BF0000; }
+  .price-unit { font-size: 14px; color: #BF0000; }
+  .cta-btn { display: block; width: 100%; padding: 18px; background: #BF0000; color: #fff; text-align: center; font-size: 18px; font-weight: 700; border-radius: 12px; text-decoration: none; letter-spacing: 0.05em; transition: background 0.15s; }
+  .cta-btn:hover { background: #990000; }
+  .footer-info { padding: 16px 20px; border-top: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
+  .updated-at { font-size: 11px; color: #bbb; }
+  .pr-badge { font-size: 10px; color: #888; background: #f0f0f0; padding: 2px 8px; border-radius: 4px; }
+  .loading-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; color: #888; gap: 16px; }
+  .spinner { width: 36px; height: 36px; border: 3px solid #f0f0f0; border-top-color: #BF0000; border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .empty-screen { text-align: center; padding: 60px 20px; color: #888; }
+  .empty-screen .emoji { font-size: 48px; margin-bottom: 16px; }
+  .notice { max-width: 480px; width: calc(100% - 32px); margin: 0 auto 32px; font-size: 11px; color: #aaa; text-align: center; line-height: 1.8; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <div class="header-logo">🛍️ トレンド商品紹介</div>
+    <div class="header-sub">Xのトレンドから厳選した楽天人気商品</div>
+  </div>
+</div>
+<div class="card" id="card">
+  <div class="loading-screen"><div class="spinner"></div><div>読み込み中...</div></div>
+</div>
+<p class="notice">※ 本ページはアフィリエイト広告を含みます（PR）<br>商品情報はトレンドに合わせて随時更新されます</p>
+<script>
+const RAW_URL = 'https://raw.githubusercontent.com/dougapro/affiliate-lp/main/latest.json';
+function formatDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  const pad = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())} 更新`;
+}
+async function load() {
+  const card = document.getElementById('card');
+  try {
+    const res = await fetch(RAW_URL + '?t=' + Date.now());
+    if (!res.ok) throw new Error();
+    const d = await res.json();
+    if (!d.name || d.name === '準備中' || !d.url) {
+      card.innerHTML = '<div class="empty-screen"><div class="emoji">🕐</div><p>現在準備中です<br>しばらくしてからご確認ください</p></div>';
+      return;
+    }
+    card.innerHTML = `
+      <div class="trend-badge">🔥 トレンド <span class="tag">#${d.keyword}</span> の関連商品</div>
+      <div class="product-image-wrap">${d.image_url ? `<img src="${d.image_url}" alt="${d.name}" onerror="this.parentElement.innerHTML='<div class=no-image>🛍️</div>'">` : '<div class="no-image">🛍️</div>'}</div>
+      <div class="product-info">
+        <div class="product-name">${d.name}</div>
+        <div class="price-row"><span class="price-label">価格</span><span class="price-value">¥${Number(d.price).toLocaleString('ja-JP')}</span><span class="price-unit">（税込）</span></div>
+        <a class="cta-btn" href="${d.url}" target="_blank" rel="noopener sponsored">楽天市場で見る →</a>
+      </div>
+      <div class="footer-info"><span class="updated-at">${formatDate(d.updated_at)}</span><span class="pr-badge">PR・広告</span></div>`;
+  } catch(e) {
+    card.innerHTML = '<div class="empty-screen"><div class="emoji">😢</div><p>読み込みに失敗しました</p></div>';
+  }
+}
+load();
+</script>
+</body>
+</html>
